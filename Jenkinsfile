@@ -1,4 +1,10 @@
 pipeline {
+  environment {
+    registry = 'jaabayron/flask_app'
+    registryCredentials = 'docker'
+    cluster_name = 'skillstorm'
+    namespace = 'jaabayron'    
+  }
   agent {
     node {
       label 'docker'
@@ -11,24 +17,37 @@ pipeline {
         git(url: 'https://github.com/fatleladle/flasking', branch: 'main')
       }
     }
-
-    stage('Build') {
+    stage('Build Stage') {
       steps {
-        sh 'docker build -t jaabayron/flask_app .'
+        script {
+          dockerImage = docker.build(registry)
+        }
       }
     }
-
-    stage('Docker Login') {
+    stage('Deploy Stage') {
       steps {
-        sh 'docker login -u jaabayron -p dckr_pat_7u4VcUPQUcqpTdLTScG44-YdrAU'
+        script {
+          docker.withRegistry('', registryCredentials)
+            dockerImage.push()
+        }
       }
     }
-
-    stage('Docker Push') {
+    stage('Kubernetes') {
       steps {
-        sh 'docker push jaabayron/flask_app'
+          withCredentials([aws(accessKeyVariable: 'AWS_ACCESS_KEY_ID', 
+          credentialsID: 'AWS', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY' ) ]) {
+            sh "aws eks update-kubeconfig --region us-east-1 --name ${cluster_name}"
+            script {
+              try {
+                sh "kubectl create namespace ${namespace}"
+              } catch (Exception e) {
+                echo "Exception handled" 
+              }
+            }
+            sh "kubectl apply -f deployment.yaml -n ${namespace}"\
+            sh "kubectl -n ${namespace} rollout restart deployment flaskcontainer"
+} 
       }
     }
-
   }
 }
