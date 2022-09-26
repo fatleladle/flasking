@@ -1,8 +1,12 @@
-FROM python:3.8-slim-buster
+FROM python:3.9.12-buster
+
+ENV FLASK_APP='app.py'
+ENV FLASK_ENV='development'
 
 WORKDIR /app
 
-COPY . .
+COPY requirements.txt requirements.txt
+COPY app.py .
 
 RUN pip install -r requirements.txt
 
