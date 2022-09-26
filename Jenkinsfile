@@ -2,7 +2,7 @@ pipeline {
   environment {
     registry = 'jaabayron/flask_app'
     registryCredentials = 'docker'
-    cluster_name = 'justice456'
+    cluster_name = 'justice321'
     namespace = 'jaabayron'    
   }
   agent {
